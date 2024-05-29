@@ -78,26 +78,81 @@ class OSCInstance extends InstanceBase {
 						useVariables: true,
 					},
 					{
+						type: 'checkbox',
+						label: 'Enable Fade',
+						id: 'enableFade',
+						default: false,
+					},
+					{
 						type: 'textinput',
 						label: 'Value',
 						id: 'int',
 						default: 1,
 						regex: Regex.SIGNED_NUMBER,
 						useVariables: true,
+						isVisible: (options) => !options.enableFade,
+					},
+					{
+						type: 'textinput',
+						label: 'Start Value',
+						id: 'start',
+						regex: Regex.SIGNED_NUMBER,
+						useVariables: true,
+						isVisible: (options) => options.enableFade,
+					},
+					{
+						type: 'textinput',
+						label: 'End Value',
+						id: 'end',
+						regex: Regex.SIGNED_NUMBER,
+						useVariables: true,
+						isVisible: (options) => options.enableFade,
+					},
+					{
+						type: 'textinput',
+						label: 'Fade time (ms)',
+						id: 'fade',
+						default: 1000,
+						regex: Regex.INT,
+						useVariables: true,
+						isVisible: (options) => options.enableFade,
 					},
 				],
 				callback: async (event) => {
 					const path = await this.parseVariablesInString(event.options.path)
-					const int = await this.parseVariablesInString(event.options.int)
-
-					sendOscMessage(path, [
-						{
-							type: 'i',
-							value: parseInt(int),
-						},
-					])
+					const int = parseInt(await this.parseVariablesInString(event.options.int))
+					const enableFade = event.options.enableFade
+			
+					if (enableFade) {
+						const start = parseInt(await this.parseVariablesInString(event.options.start))
+						const end = parseInt(await this.parseVariablesInString(event.options.end))
+						const fade = parseInt(await this.parseVariablesInString(event.options.fade))
+						
+						const steps = Math.abs(end - start)
+						const interval = fade / steps
+						const stepValue = (end > start ? 1 : -1)
+			
+						for (let i = 0; i <= steps; i++) {
+							setTimeout(() => {
+								const value = start + stepValue * i
+								sendOscMessage(path, [
+									{
+										type: 'i',
+										value: value,
+									},
+								])
+							}, interval * i)
+						}
+					} else {
+						sendOscMessage(path, [
+							{
+								type: 'i',
+								value: int,
+							},
+						])
+					}
 				},
-			},
+			},									
 			send_float: {
 				name: 'Send float',
 				options: [
@@ -109,24 +164,93 @@ class OSCInstance extends InstanceBase {
 						useVariables: true,
 					},
 					{
+						type: 'checkbox',
+						label: 'Enable Fade',
+						id: 'enableFade',
+						default: false,
+					},
+					{
 						type: 'textinput',
 						label: 'Value',
 						id: 'float',
 						default: 1,
 						regex: Regex.SIGNED_FLOAT,
 						useVariables: true,
+						isVisible: (options) => !options.enableFade,
+					},
+					{
+						type: 'textinput',
+						label: 'Start Value',
+						id: 'start',
+						regex: Regex.SIGNED_FLOAT,
+						useVariables: true,
+						isVisible: (options) => options.enableFade,
+					},
+					{
+						type: 'textinput',
+						label: 'End Value',
+						id: 'end',
+						regex: Regex.SIGNED_FLOAT,
+						useVariables: true,
+						isVisible: (options) => options.enableFade,
+					},
+					{
+						type: 'textinput',
+						label: 'Fade time (ms)',
+						id: 'fade',
+						default: 1000,
+						regex: Regex.INT,
+						useVariables: true,
+						isVisible: (options) => options.enableFade,
+					},
+					{
+						type: 'number',
+						label: 'Granularity',
+						tooltip: 'Number of floating points to send',
+						id: 'granularity',
+						min: 0,
+						max: 4,
+						default: 2,
+						regex: Regex.INT,
+						useVariables: true,
+						isVisible: (options) => options.enableFade,
 					},
 				],
 				callback: async (event) => {
 					const path = await this.parseVariablesInString(event.options.path)
-					const float = await this.parseVariablesInString(event.options.float)
-
-					sendOscMessage(path, [
-						{
-							type: 'f',
-							value: parseFloat(float),
-						},
-					])
+					const enableFade = event.options.enableFade
+			
+					if (enableFade) {
+						const start = parseFloat(await this.parseVariablesInString(event.options.start))
+						const end = parseFloat(await this.parseVariablesInString(event.options.end))
+						const fade = parseInt(await this.parseVariablesInString(event.options.fade))
+						const granularity = parseInt(await this.parseVariablesInString(event.options.granularity))
+						
+						const stepValue = Math.pow(10, -granularity)
+						const steps = Math.ceil(Math.abs(end - start) / stepValue)
+						const interval = fade / steps
+			
+						for (let i = 0; i <= steps; i++) {
+							setTimeout(() => {
+								const value = start + stepValue * i * (end > start ? 1 : -1)
+								const roundedValue = parseFloat(value.toFixed(granularity))
+								sendOscMessage(path, [
+									{
+										type: 'f',
+										value: roundedValue,
+									},
+								])
+							}, interval * i)
+						}
+					} else {
+						const float = parseFloat(await this.parseVariablesInString(event.options.float))
+						sendOscMessage(path, [
+							{
+								type: 'f',
+								value: float,
+							},
+						])
+					}
 				},
 			},
 			send_string: {

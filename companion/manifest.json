@@ -11,6 +11,10 @@
 		{
 			"name": "William Viker",
 			"email": "william@bitfocus.io"
+		},
+		{
+			"name": "Ted Charles Brown",
+			"email": "tedcharlesbrown@gmail.com"
 		}
 	],
 	"legacyIds": ["direct_osc", "osc"],
